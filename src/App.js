@@ -1,32 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import "./App.css";
 import Post from "./Post";
 
+import { db } from "./firebase";
+import Modal from "@material-ui/core/Modal";
+import { makeStyles } from "@material-ui/core/styles";
+import Button from "@material-ui/core/Button";
+
+function getModalStyle() {
+  const top = 50;
+  const left = 50;
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
+
+const useStyles = makeStyles((theme) => ({
+  paper: {
+    position: "absolute",
+    width: 400,
+    backgroundColor: theme.palette.background.paper,
+    border: "2px solid #000",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
+}));
+
 function App() {
-  const [posts, setPosts] = useState([
-    {
-      username: "Phil",
-      caption: "Wow it works",
-      imageUrl:
-        "https://upload.wikimedia.org/wikipedia/en/c/c7/Batman_Infobox.jpg",
-    },
-    {
-      username: "Joe",
-      caption: "Cool beans",
-      imageUrl:
-        "https://www.thehindu.com/entertainment/qh3fnb/article29475886.ece/ALTERNATES/LANDSCAPE_1200/batman-day",
-    },
-    {
-      username: "Mike",
-      caption: "What up",
-      imageUrl:
-        "https://www.lego.com/cdn/cs/set/assets/blt0bf03ae97678db52/Batman2_App_Sidekick-Tall1.jpg?fit=crop&format=jpg&quality=80&width=800&height=600&dpr=1",
-    },
-  ]);
+  const classes = useStyles();
+  const [modalStyle] = useState(getModalStyle);
+  const [posts, setPosts] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    db.collection("posts").onSnapshot((snapshot) => {
+      setPosts(
+        snapshot.docs.map((doc) => ({
+          id: doc.id,
+          post: doc.data(),
+        }))
+      );
+    });
+  }, []);
 
   return (
     <div className="app">
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <div style={modalStyle} className={classes.paper}>
+          <h2>I am a modal</h2>
+        </div>
+      </Modal>
       <div className="app__header">
         <img
           className="app__headerImage"
@@ -35,8 +62,11 @@ function App() {
         />
       </div>
 
-      {posts.map((post) => (
+      <Button onClick={() => setOpen(true)}>SIGN UP</Button>
+
+      {posts.map(({ post, id }) => (
         <Post
+          key={id}
           username={post.username}
           caption={post.caption}
           imageUrl={post.imageUrl}
